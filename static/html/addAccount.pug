@@ -1,0 +1,29 @@
+doctype html
+html
+  head
+    title Create Account
+  body
+    h1 Create Account
+    form(action="/createAccount" method="post")
+      div
+        label(for="email") Email:
+        input(type="email" id="email" name="email" required)
+      div
+        label(for="password") Password:
+        input(type="password" id="password" name="password" required)
+      div
+        label(for="confirm_password") Confirm Password:
+        input(type="password" id="confirm_password" name="confirm_password" required)
+      div
+        input(type="submit" value="Create Account")
+script.
+  window.onload = function() {
+    document.querySelector('form').onsubmit = function() {
+      var password = document.getElementById('password').value;
+      var confirmPassword = document.getElementById('confirm_password').value;
+      if (password !== confirmPassword) {
+        alert('Passwords do not match!');
+        return false;
+      }
+    };
+  };

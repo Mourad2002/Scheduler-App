@@ -1,0 +1,156 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1, shrink-to-fit=no')
+    link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css', integrity='sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO', crossorigin='anonymous')
+    title Add Event
+  body
+    nav.navbar.navbar-expand-lg.navbar-light.bg-light
+      ul.nav.nav-pills
+        li.nav-item
+          a.nav-link(href='/') Home
+        li.nav-item
+          a.nav-link(href='/schedule') Schedule
+        li.nav-item.active
+          a.nav-link.active(href='/addEvent') Add Event
+    br
+    .container.mb-5
+      form#addEventForm
+        .form-group
+          label(for='nameInput') Event Name
+          input#nameInput.form-control(type='text', name='event', pattern='[a-zA-Z0-9\s]+', title='Event must be alphanumeric', required='')
+        .form-group
+          label(for='dayInput') Day of Week
+          select#dayInput.form-control(name='day')
+            option(value='') Select Day
+            option(value='sunday') Sunday
+            option(value='monday') Monday
+            option(value='tuesday') Tuesday
+            option(value='wednesday') Wednesday
+            option(value='thursday') Thursday
+            option(value='friday') Friday
+            option(value='saturday') Saturday
+        .form-group
+          label(for='startTimeInput') Start Time
+          input#startTimeInput.form-control(type='time', name='start', required='')
+        .form-group
+          label(for='endTimeInput') End Time
+          input#endTimeInput.form-control(type='time', name='end', required='')
+        .form-group
+          label(for='phoneInput') Phone Number
+          input#phoneInput.form-control(type='tel', name='phone', required='')
+        .form-group
+          label(for='locationInput') Location
+          input#locationInput.form-control(type='text', name='location', required='')
+        .form-group
+          label(for='extraInput') Extra Information
+          input#extraInput.form-control(type='text', name='info')
+        .form-group
+          label(for='urlInput') URL for Extra Information
+          input#urlInput.form-control(type='url', name='url')
+        button#submitBtn.btn.btn-block.btn-primary(type='button') Submit Event
+        button.btn.btn-block.btn-secondary(type='button', onclick='checkOverlap()') Check for Overlap
+        #overlapAlert.container.mt-3
+
+    script(type="text/javascript").
+      document.getElementById('submitBtn').addEventListener('click', function(event) {
+        event.preventDefault();
+        const formElement = document.getElementById('addEventForm');
+        const formData = new FormData(formElement);
+        const eventData = {};
+        for (let [key, value] of formData.entries()) {
+          eventData[key] = value;
+        }
+        console.log("Form Data:", eventData);
+        fetch('/postEventEntry', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(eventData)
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Success:', data);
+          // Handle the success case, e.g., display a success message or redirect
+          window.location.href = '/schedule';
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          // Handle the error case
+        });
+      });
+
+      function checkOverlap() {
+        const dayInput = document.getElementById('dayInput');
+        const startTimeInput = document.getElementById('startTimeInput');
+        const endTimeInput = document.getElementById('endTimeInput');
+        
+        const eventData = {
+          day: dayInput.value.toLowerCase(),
+          start: startTimeInput.value,
+          end: endTimeInput.value,
+        };
+        fetch('/checkOverlap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(eventData)
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.overlap) {
+            createAlert(data.count, data.events);
+          } else {
+            removeAlert();
+          }
+        })
+        .catch(error => {
+          console.error('Fetch error:', error.message);
+        });
+      }
+
+      function createAlert(count, events) {
+        let listItems = events.map(event =>
+          `<li class="list-group-item">${event.name} from ${event.start} to ${event.end}</li>`
+        ).join('');
+        let newHtml = `
+          <div class="alert alert-warning" role="alert">
+            This event interferes with ${count} other(s):
+            <ul class="list-group">
+              ${listItems}
+            </ul>
+          </div>
+        `;
+        document.getElementById('overlapAlert').innerHTML = newHtml;
+      }
+
+      function removeAlert() {
+        let newHtml = `
+          <div class="alert alert-success" role="alert">
+            No interference with other events.
+          </div>`;
+        document.getElementById('overlapAlert').innerHTML = newHtml;
+      }
+
+
+
+
+
+
+
+
+
+

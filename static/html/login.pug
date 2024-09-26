@@ -1,0 +1,52 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
+    title Login to Node.js
+  body
+    .container
+      .jumbotron
+        h1 Login Page
+        p Please enter your username and password. Both fields are case sensitive.
+        #loginError.alert.alert-danger(style='display: none;')
+        form#loginForm
+          .form-group
+            label(for='username') Username:
+            input#username.form-control(type='text', name='username', required='')
+          .form-group
+            label(for='password') Password:
+            input#password.form-control(type='password', name='password', required='')
+          button.btn.btn-primary.btn-block(type='button', onclick='submitLoginForm()') Log In
+
+    script.
+      function submitLoginForm() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        fetch('/perform_login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username: username, password: password })
+        })
+        .then(response => {
+          if (response.ok) {
+            response.json().then(data => {
+              if (data.status === 'ok') {
+                window.location.href = '/schedule'; // Redirect on successful login
+              } else {
+                throw new Error(data.message); // Throw error with server message
+              }
+            });
+          } else {
+            throw new Error('Login failed'); // Generic error if response not OK
+          }
+        })
+        .catch(error => {
+          const loginError = document.getElementById('loginError');
+          loginError.textContent = error.message;
+          loginError.style.display = 'block';
+        });
+      }

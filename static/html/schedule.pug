@@ -1,0 +1,172 @@
+doctype html
+html
+  head
+    style.
+      .edit-btn, .delete-btn {
+        display: none; /* Hide buttons by default */
+      }
+      tr:hover .edit-btn, tr:hover .delete-btn {
+        display: inline-block; /* Show buttons on hover */
+      }
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1, shrink-to-fit=no')
+    link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css', integrity='sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO', crossorigin='anonymous')
+    script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js')
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js', integrity='sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49', crossorigin='anonymous')
+    script(src='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js', integrity='sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy', crossorigin='anonymous')
+    script.
+      function formTable(element) {
+      $('#days li a').removeClass("active");
+      $(element).addClass("active");
+      clearTable();
+      let day = $(element).text().toLowerCase();
+      // Fetch all schedule data
+      fetch('/getSchedule')
+      .then(response => response.json())
+      .then(events => {
+      // Filter events for the selected day
+      let daysEvents = events.filter(event => event.day.toLowerCase() === day);
+      if (daysEvents.length > 0) {
+      daysEvents.forEach(event => {
+      addRowToTable(event);
+      });
+      } else {
+      console.log(`No events found for ${day}`);
+      }
+      })
+      .catch(error => {
+      console.error('There was a problem with your fetch operation:', error);
+      });
+      }
+    title My Schedule
+  body
+    nav.navbar.navbar-expanded.navbar-light.bg-light.mb-5
+      ul.nav.nav-pills
+        li.nav-item
+          a.nav-link(href='/') Home
+          // This is where you add the "Home" link
+        li.nav-item.active
+          a.nav-link.active(href='/schedule') Schedule
+        li.nav-item
+          a.nav-link(href='/addEvent') Add Event
+      ul.nav.nav-pills
+        li.nav-item
+          a.nav-link(href='/logout') Logout
+    .container.mb-5
+      .alert.alert-secondary(role='alert')
+        | Click on a day to see its events
+    .container.mb-3
+      ul#days.nav.nav-tabs.nav-fill
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Sunday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Monday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Tuesday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Wednesday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Thursday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Friday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Saturday
+      br
+      br
+      .container
+        table#scheduleTable.table.table-striped
+          thead
+            tr
+              th(scope='col') Name
+              th(scope='col') Time
+              th(scope='col') Location
+              th(scope='col') Phone
+              th(scope='col') Extra Information
+          tbody
+
+    script.
+      function formTable(element) {
+        $('#days li a').removeClass("active");
+        $(element).addClass("active");
+        clearTable();
+        let day = $(element).text().toLowerCase();
+        // Fetch all schedule data
+        fetch('/getSchedule')
+        .then(response => response.json())
+        .then(events => {
+          console.log('Fetched events:', events); // Log fetched events
+          // Filter events for the selected day
+          let daysEvents = events.filter(event => event.event_day.toLowerCase() === day); // Adjust property name
+          console.log('Filtered events:', daysEvents); // Log filtered events
+          if (daysEvents.length > 0) {
+            daysEvents.forEach(event => {
+              addRowToTable(event); // Add row with edit and delete button
+            });
+          } else {
+            console.log(`No events found for ${day}`);
+          }
+        })
+        .catch(error => {
+          console.error('There was a problem with your fetch operation:', error);
+        });
+      }
+
+      function addRowToTable(event) {
+        const table = document.getElementById('scheduleTable');
+        const row = table.insertRow(-1);
+        const nameCell = row.insertCell(0);
+        const timeCell = row.insertCell(1);
+        const locationCell = row.insertCell(2);
+        const phoneCell = row.insertCell(3);
+        const infoCell = row.insertCell(4);
+        const editCell = row.insertCell(5);
+        const deleteCell = row.insertCell(6);
+        
+        nameCell.textContent = event.event_event;
+        timeCell.textContent = event.event_start + ' - ' + event.event_end;
+        locationCell.textContent = event.event_location;
+        phoneCell.textContent = event.event_phone;
+        infoCell.innerHTML = `<a href="${event.event_url}" target="_blank">${event.event_info}</a>`;
+        editCell.innerHTML = `<button class="edit-btn" onclick="editEvent(${event.event_id})">Edit</button>`;
+        deleteCell.innerHTML = `<button class="delete-btn" onclick="confirmDeletion(${event.event_id})">Delete</button>`;
+      }
+
+      function confirmDeletion(eventId) {
+        if (confirm("Do you really want to delete this event?")) {
+          fetch(`/events/${eventId}`, { method: 'DELETE' })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert('Event deleted successfully.');
+              location.reload(); // Reload the page to refresh the events list.
+            } else {
+              alert('Failed to delete the event.');
+            }
+          })
+          .catch(error => alert('Error deleting event: ' + error));
+        }
+      }
+      function editEvent(id){
+        window.location.href = `/edit/${id}`;
+      }
+
+      function clearTable() {
+        const table = document.getElementById('scheduleTable');
+        let rowCounter = table.rows.length;
+        for (let i = rowCounter - 1; i > 0; i--) {
+          table.deleteRow(i);
+        }
+      }
+
+      $(document).ready(function() {
+        fetch('/api/events')
+        .then(response => response.json())
+        .then(events => {
+          events.forEach(event => {
+            $('#schedule').append(
+              $('<div>').text(`${event.event_event} on ${event.event_day} from ${event.event_start} to ${event.event_end}`)
+            );
+          });
+        })
+        .catch(error => console.error('Error fetching events:', error));
+      });
